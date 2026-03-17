@@ -49,16 +49,38 @@ async function getReply(userMessage) {
   return res.data.choices[0].message.content;
 }
 
-// LINE Webhook
+// LINEに返信する関数
+async function replyToLine(event, text) {
+  await axios.post(
+    "https://api.line.me/v2/bot/message/reply",
+    {
+      replyToken: event.replyToken,
+      messages: [
+        {
+          type: "text",
+          text: text
+        }
+      ]
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${LINE_TOKEN}`
+      }
+    }
+  );
+}
+
+// Webhook受信
 app.post("/webhook", async (req, res) => {
   const events = req.body.events;
   for (let event of events) {
     if (event.type === "message" && event.message.type === "text") {
       const replyText = await getReply(event.message.text);
-      console.log("Reply:", replyText);
+      await replyToLine(event, replyText); // ここでLINEに返信
     }
   }
-  res.sendStatus(200);
+  res.sendStatus(200); // 必ず200を返す
 });
 
 // サーバー起動
