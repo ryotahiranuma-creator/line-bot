@@ -7,6 +7,7 @@ app.use(express.json());
 const LINE_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
+// OpenAIから返信を取得する関数
 async function getReply(userMessage) {
   const res = await axios.post(
     "https://api.openai.com/v1/chat/completions",
@@ -42,4 +43,15 @@ async function getReply(userMessage) {
       headers: {
         "Authorization": `Bearer ${OPENAI_API_KEY}`
       }
-s
+    }
+  );
+
+  return res.data.choices[0].message.content;
+}
+
+// LINEのWebhook受信
+app.post("/webhook", async (req, res) => {
+  const events = req.body.events;
+  for (let event of events) {
+    if (event.type === "message" && event.message.type === "text") {
+      const replyText = await getReply(event.message.text);
